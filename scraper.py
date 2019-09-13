@@ -3,8 +3,6 @@ from bs4 import BeautifulSoup
 import sqlite3
 from sqlite3 import Error
 
-
-#URL = "https://www.amazon.com/Cancelling-Headphones-Bluetooth-Microphone-Comfortable/dp/B019U00D7K"
 headers = {"User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134'}
 
 def create_connection(db_file):
