@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import sqlite3
 from sqlite3 import Error
+import time
 
 headers = {"User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/17.17134'}
 
@@ -56,13 +57,13 @@ else:
 # add item to database
 def addItem():
     URL = input('Paste URL: ')
-    page = requests.get(URL)
+    page = requests.get(URL, headers = headers)
 
-    soup = BeautifulSoup(page.content, 'html.parser')
-    
-    if soup.find(id = 'productTitle') == None:
+    if page.status_code != 200:
         print('Not able to retrieve page. Try later')
         return
+
+    soup = BeautifulSoup(page.content, 'lxml')        
         
     title = soup.find(id = 'productTitle').get_text().strip()
     price = soup.find(id = 'priceblock_ourprice').get_text()
@@ -93,7 +94,30 @@ def deleteItem():
 
 # checks all items in database to see if price has dropped
 def checkPriceChange():
-    print('Implement soon')
+    while True:
+        cur = conn.cursor()
+        select_query = 'SELECT * FROM prices'
+        for row in cur.execute(select_query):
+            URL = row[1]
+            page = requests.get(URL, headers=headers)
+            
+            if page.status_code != 200:
+                print('checkPriceChange: Not able to retrieve page for item: ', row[0])          
+            else:
+                soup = BeautifulSoup(page.content, 'lxml')
+                price = soup.find(id = 'priceblock_ourprice').get_text()
+                price = price[1:]
+                price_conv = float(price)
+
+                if price_conv < row[3]:
+                    print("Price dropped for item: ", row[0], "!!!")
+                    print("Email sending")
+                else:
+                    print('Price did not drop for item: ', row[0])
+            time.sleep(2.0)
+        print("Will check for price changes again in 24 hours.")
+        time.sleep(24*60*60)   
+    
 
 # prints all items in database
 def printAllItems():
@@ -111,7 +135,7 @@ def main():
     print('1: Add new item to database')
     print('2: Delete item from database')
     print('3: Print all items in database')
-    print('4: Check periodically for price drops for all items')
+    print('4: Check for price drops. Program will check once every 24 hours.')
     choice = input()
     if choice == '1':
         addItem()
@@ -120,7 +144,7 @@ def main():
     elif choice == '3':
         printAllItems()
     elif choice == '4':
-        print('To implement')
+        checkPriceChange()
     else:
         print('Enter valid number')
 
